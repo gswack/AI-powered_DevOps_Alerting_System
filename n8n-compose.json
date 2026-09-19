@@ -1,0 +1,238 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "3b3ec860-3ee3-4d20-abbc-bc1377dcec55",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c1a85c8-460a-4014-be9d-a21496dbd138",
+              "name": "name",
+              "value": "Gabriel",
+              "type": "string"
+            },
+            {
+              "id": "2f197525-30b7-48a7-8c33-1a4371fda74b",
+              "name": "email",
+              "value": "swack.gabe@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "d5fc07e3-0cdd-49cf-ab71-a551e8a053ce",
+              "name": "course_name",
+              "value": "devops",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [224, 0],
+      "id": "e148963b-2602-423c-a3f3-f0b3851a3148",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1xAOy5HOheEFm4ibL1l6KEOUtKGhOLFFSsbm6WkylEWE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "test_sheet2",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [448, 0],
+      "id": "c3d4e5f6-1a2b-4c3d-8e9f-0a1b2c3d4e5f",
+      "name": "Get Existing Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "K4tgCW0hTOC7xr4G",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Look at every existing row's \"id\" column and take the highest one.\n// Starting at 0 means the very first run produces id = 1.\nconst rows = $input.all();\n\nconst existingIds = rows\n  .map(row => Number(row.json.id))\n  .filter(n => !isNaN(n));\n\nconst nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;\n\nreturn [{ json: { id: nextId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 0],
+      "id": "d4e5f6a7-2b3c-4d5e-9f0a-1b2c3d4e5f6a",
+      "name": "Calculate Next ID"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xAOy5HOheEFm4ibL1l6KEOUtKGhOLFFSsbm6WkylEWE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "test_sheet",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "name": "={{ $('Edit Fields').item.json.name }}",
+            "email": "={{ $('Edit Fields').item.json.email }}",
+            "course name": "={{ $('Edit Fields').item.json.course_name }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "course name",
+              "displayName": "course name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [896, 0],
+      "id": "56fddce6-12f2-4c36-b20c-d48ab88b5a2b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "K4tgCW0hTOC7xr4G",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "={{ $('Edit Fields').item.json.course_name }} — spreadsheet updated (row #{{ $('Calculate Next ID').item.json.id }})",
+        "message": "=<h1>Hello {{ $('Edit Fields').item.json.name }}</h1><p>This is an automated alert from the n8n system.</p><hr><p style=\"color: green;\">Status: row #{{ $('Calculate Next ID').item.json.id }} successfully added with course name: {{ $('Edit Fields').item.json.course_name }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1120, -100],
+      "id": "a968c8e4-845b-4d5d-a522-418267d4b4bd",
+      "name": "Send Success Email",
+      "webhookId": "192838fd-b10b-45cc-99c2-7b87eb510f8a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9tBOHT2QdnBhZQqw",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "={{ $('Edit Fields').item.json.course_name }} — update FAILED",
+        "message": "=<h1>Hello {{ $('Edit Fields').item.json.name }}</h1><p>This is an automated alert from the n8n system.</p><hr><p style=\"color: red;\">Status: FAILED to add row for course name: {{ $('Edit Fields').item.json.course_name }}</p><p>Error: {{ $json.error?.message || 'Unknown error' }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1120, 100],
+      "id": "b1e4f7a2-9c3d-4e5f-8a6b-1d2e3f4a5b6c",
+      "name": "Send Failure Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9tBOHT2QdnBhZQqw",
+          "name": "Gmail account 3"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [{ "node": "Edit Fields", "type": "main", "index": 0 }]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [{ "node": "Get Existing Rows", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Existing Rows": {
+      "main": [
+        [{ "node": "Calculate Next ID", "type": "main", "index": 0 }]
+      ]
+    },
+    "Calculate Next ID": {
+      "main": [
+        [{ "node": "Append row in sheet", "type": "main", "index": 0 }]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [{ "node": "Send Success Email", "type": "main", "index": 0 }],
+        [{ "node": "Send Failure Email", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "264dcd197d87b07684b9a42deb2c2ebf998b387280d3bd13226267d59cbc5778"
+  }
+}
